@@ -6,7 +6,7 @@ USE company_db;
 
 
 CREATE TABLE departments (
-  departments_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   department VARCHAR(30)
 );
 
@@ -16,7 +16,7 @@ CREATE TABLE roles (
   departments_id INT,
   salary DECIMAL,
   FOREIGN KEY (departments_id)
-  REFERENCES departments(departments_id)
+  REFERENCES departments(id)
 );
 
 
