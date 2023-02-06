@@ -122,12 +122,45 @@ function startApp(){
     async function viewRoles() {
         const roles = await db.query("SELECT roles.roles_id, roles.role_title, departments.department, roles.salary FROM roles JOIN departments ON roles.departments_id = departments.id")
         console.table(roles);
+        mainMenu();
     };
 
 
-    function addRoles() {
+    async function addRoles() {
+        let departments = await db.query('SELECT * FROM departments')
+        let departmentsChoices = departments.map(({id, department}) => ({
+            value: id, 
+            name: department
+        }))
+       
+     inquirer
+            .prompt([
+                {
+                    type: 'input',
+                    name: 'roleName',
+                    message: 'What is the role you would like to add?',
+                },
+                {
+                    type: 'input',
+                    name: 'roleSalary',
+                    message: 'What is the salary for this role?',
+                },
+                {
+                    type: 'list',
+                    name: 'employeeRole',
+                    message: 'What is the department for this role?',
+                    choices: departmentsChoices, 
+                },
+            ])
+            .then(function (data) {
+                db.query(`INSERT INTO roles(role_title, salary, departments_id) VALUES 
+                ( "${data.roleName}", "${data.roleSalary}", "${data.employeeRole}")`);
+                console.log("New role has been added!");
+                mainMenu();
+            });
 
     };
+
 
     function viewDepartments() {
         // query for viewdepartments db 
