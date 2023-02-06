@@ -1,17 +1,10 @@
 const inquirer = require('inquirer');
 const fs = require('fs');
 const mysql = require('mysql2');
-// const db = mysql.createConnection(
-//     {
-//         host: 'localhost',
-//         // MySQL username,
-//         user: 'root',
-//         // MySQL password
-//         password: 'Winston123!',
-//         database: 'company_db'
-//     },
-//     console.log(`Connected to the company_db database.`)
-// );
+const db = require("./lib/db");
+const utils = require("util");
+db.query = utils.promisify(db.query);
+
 
 
 function startApp(){
@@ -48,87 +41,113 @@ function startApp(){
                     case "Add department":
                         return addDepartments();
                         break;
-                    case "Done":
-                        return doneChoice();
-                        break;
+                    default: 
+                    process.exit();
+                        
 
                 };
             });
     };
 
     async function viewAllEmployees() {
+    
         try {
             const results = await db.query(
                 `SELECT employees.id, employees.first_name AS "first name", employees.last_name
-                AS "last name", role.title, departments.department AS department, roles.salary,
+                AS "last name", roles.role_title, departments.department AS department, roles.salary,
                 concat(manager.first_name, " ", manager.last_name) AS manager
                 FROM employees
                 LEFT JOIN roles
-                ON employees.role_id = role.id
+                ON employees.role_id = roles.roles_id
                 LEFT JOIN departments
                 ON roles.departments_id = departments.id
                 LEFT JOIN employees manager
                 ON manager.id = employees.manager_id`);
             console.table(results);
-            return results;
+            mainMenu();
         } catch (err) {
             console.log(err);
         }
-        mainMenu();
     };
 
-    // async function addEmployee() {
-    //  inquirer
-    //         .prompt([
-    //             {
-    //                 type: 'input',
-    //                 name: 'firstName',
-    //                 message: 'What is the employees first name?',
-    //             },
-    //             {
-    //                 type: 'input',
-    //                 name: 'lastName',
-    //                 message: 'What is the employees last name?',
-    //             },
-    //             {
-    //                 type: 'input',
-    //                 name: 'firstName',
-    //                 message: 'What is the employees first name?',
-    //             },
-    //         ])
+    async function addEmployee() {
+        let roles = await db.query('SELECT * FROM roles')
+        let roleChoices = roles.map(({roles_id, role_title}) => ({
+            value: roles_id, 
+            name: role_title
+        }))
+        let manager = await db.query ('SELECT * FROM employees')
+        let managerChoices = manager.map(({id, first_name, last_name}) => ({
+            value: id, 
+            name: `${first_name} ${last_name}`
+        }))
 
-    // };
+     inquirer
+            .prompt([
+                {
+                    type: 'input',
+                    name: 'firstName',
+                    message: 'What is the employees first name?',
+                },
+                {
+                    type: 'input',
+                    name: 'lastName',
+                    message: 'What is the employees last name?',
+                },
+                {
+                    type: 'list',
+                    name: 'employeeRole',
+                    message: 'What is the employee role?',
+                    choices: roleChoices, 
+                },
+                {
+                    type: 'list',
+                    name: 'managerChoices',
+                    message: 'Who is the manager?',
+                    choices: managerChoices, 
+                },
+            ])
+            .then(function (data) {
+                db.query(`INSERT INTO employees(first_name, last_name, role_id, manager_id) VALUES ("${data.firstName}", "${data.lastName}", "${data.employeeRole}", "${data.managerChoices}")`);
+                console.log("New employee has been added!");
+                mainMenu();
+            });
 
-    // function updateRole() {
+    };
 
-    // };
+    function updateRole() {
+// look up update fuction, has a set. 
+    };
 
-    // function viewRoles() {
+    async function viewRoles() {
+        const roles = await db.query("SELECT roles.roles_id, roles.role_title, departments.department, roles.salary FROM roles JOIN departments ON roles.departments_id = departments.id")
+        console.table(roles);
+    };
 
-    // };
-    // function addRoles() {
 
-    // };
+    function addRoles() {
 
-    // function viewDepartments() {
-    //     // query for viewdepartments db 
-    // };
-    // function addDepartments() {
-    //     inquirer
-    //         .prompt([
-    //             {
-    //                 type: 'input',
-    //                 name: 'addDepart',
-    //                 message: 'What department would you like to add?',
-    //             }
-    //         ])
-    //         .then(function (data) {
-    //             db.query(`INSERT INTO departments(department) VALUES ("${data.addDepart})`)
-    //         });
-    //     console.log(`\nNew department added!\n`);
-    //     mainMenu();
+    };
 
-    // };
+    function viewDepartments() {
+        // query for viewdepartments db 
+    };
+    function addDepartments() {
+        inquirer
+            .prompt([
+                {
+                    type: 'input',
+                    name: 'addDepart',
+                    message: 'What department would you like to add?',
+                }
+            ])
+            .then(function (data) {
+                db.query(`INSERT INTO departments(department) VALUES ("${data.addDepart})`)
+            });
+        console.log(`\nNew department added!\n`);
+        mainMenu();
+
+    };
 
 mainMenu();
 }
