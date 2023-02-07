@@ -208,7 +208,11 @@ function startApp() {
 
 
 
-    function addDepartments() {
+
+
+    
+    async function addDepartments() {
+        const newDept = await 
         inquirer
             .prompt([
                 {
@@ -217,9 +221,9 @@ function startApp() {
                     message: 'What department would you like to add?',
                 }
             ])
-            .then(function (data) {
-                db.query(`INSERT INTO departments(department) VALUES ("${data.addDepart})`)
-            });
+            const addedDept = await db.query (`INSERT INTO departments(department) VALUES ("${newDept.addDepart}")`)
+            
+            
         console.log(`\nNew department added!\n`);
         mainMenu();
 
