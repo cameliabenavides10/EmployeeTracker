@@ -7,7 +7,7 @@ db.query = utils.promisify(db.query);
 
 
 
-function startApp(){
+function startApp() {
     function mainMenu() {
         inquirer
             .prompt([{
@@ -41,16 +41,16 @@ function startApp(){
                     case "Add department":
                         return addDepartments();
                         break;
-                    default: 
-                    process.exit();
-                        
+                    default:
+                        process.exit();
+
 
                 };
             });
     };
 
     async function viewAllEmployees() {
-    
+
         try {
             const results = await db.query(
                 `SELECT employees.id, employees.first_name AS "first name", employees.last_name
@@ -72,17 +72,17 @@ function startApp(){
 
     async function addEmployee() {
         let roles = await db.query('SELECT * FROM roles')
-        let roleChoices = roles.map(({roles_id, role_title}) => ({
-            value: roles_id, 
+        let roleChoices = roles.map(({ roles_id, role_title }) => ({
+            value: roles_id,
             name: role_title
         }))
-        let manager = await db.query ('SELECT * FROM employees')
-        let managerChoices = manager.map(({id, first_name, last_name}) => ({
-            value: id, 
+        let manager = await db.query('SELECT * FROM employees')
+        let managerChoices = manager.map(({ id, first_name, last_name }) => ({
+            value: id,
             name: `${first_name} ${last_name}`
         }))
 
-     inquirer
+        inquirer
             .prompt([
                 {
                     type: 'input',
@@ -98,25 +98,60 @@ function startApp(){
                     type: 'list',
                     name: 'employeeRole',
                     message: 'What is the employee role?',
-                    choices: roleChoices, 
+                    choices: roleChoices,
                 },
                 {
                     type: 'list',
                     name: 'managerChoices',
                     message: 'Who is the manager?',
-                    choices: managerChoices, 
+                    choices: managerChoices,
                 },
             ])
             .then(function (data) {
                 db.query(`INSERT INTO employees(first_name, last_name, role_id, manager_id) VALUES ("${data.firstName}", "${data.lastName}", "${data.employeeRole}", "${data.managerChoices}")`);
                 console.log("New employee has been added!");
+                console.log(data.managerChoices);
+                console.log(data.roleChoices);
                 mainMenu();
             });
 
     };
 
-    function updateRole() {
-// look up update fuction, has a set. 
+    async function updateRole() {
+        let employee = await db.query('SELECT * FROM employees')
+        let employeeChoices = employee.map(({ first_name, last_name, id }) => ({
+            value:id,
+            name: `${first_name} ${last_name}`
+        }))
+        let roles = await db.query('SELECT * FROM roles')
+        let roleChoices = roles.map(({ roles_id, role_title }) => ({
+            value: roles_id,
+            name: role_title
+        }))
+
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'employeeChosen',
+                    message: 'Which employee would you like to update?',
+                    choices: employeeChoices,
+                },
+                {
+                    type: 'list',
+                    name: 'roleChosen',
+                    message: 'Choose a new role?',
+                    choices: roleChoices,
+                },
+               
+            ])
+            .then(function(data) {
+                db.query(`UPDATE employees SET role_id = "${data.roleChosen}" WHERE id = "${data.employeeChosen}"`);
+                console.log("Your employee has been updated!");
+                console.log(data.roleChosen);
+                console.log(data.employeeChosen);
+                mainMenu();
+            });
     };
 
     async function viewRoles() {
@@ -128,12 +163,12 @@ function startApp(){
 
     async function addRoles() {
         let departments = await db.query('SELECT * FROM departments')
-        let departmentsChoices = departments.map(({id, department}) => ({
-            value: id, 
+        let departmentsChoices = departments.map(({ id, department }) => ({
+            value: id,
             name: department
         }))
-       
-     inquirer
+
+        inquirer
             .prompt([
                 {
                     type: 'input',
@@ -149,7 +184,7 @@ function startApp(){
                     type: 'list',
                     name: 'employeeRole',
                     message: 'What is the department for this role?',
-                    choices: departmentsChoices, 
+                    choices: departmentsChoices,
                 },
             ])
             .then(function (data) {
@@ -159,12 +194,20 @@ function startApp(){
                 mainMenu();
             });
 
+    }
+
+   async function viewDepartments() {
+        try {
+            const departments = await db.query("SELECT id, department FROM departments");
+            console.table(departments);
+            mainMenu();
+        } catch (err) {
+            console.log(err);
+        }
     };
 
 
-    function viewDepartments() {
-        // query for viewdepartments db 
-    };
+
     function addDepartments() {
         inquirer
             .prompt([
@@ -181,9 +224,7 @@ function startApp(){
         mainMenu();
 
     };
-
-mainMenu();
-}
-
+  mainMenu();
+};
 startApp();
 
